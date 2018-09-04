@@ -1,7 +1,8 @@
 require('dotenv').config()
-const geocode = require('./geocode/geocode.js')
 const yargs = require('yargs')
-const request = require('request')
+
+const geocode = require('./geocode/geocode.js')
+const weather = require('./weather/weather.js')
 
 const argv = yargs
   .options({
@@ -21,26 +22,15 @@ geocode.geocodeAddress(argv.address, (errorMessage, results) => {
   if (errorMessage) {
     console.log(errorMessage)
   } else {
-    console.log(JSON.stringify(results, undefined, 2))
-    let lat = results.latitude
-    let long = results.longitude
-    getTemperature(lat, long)
+    //console.log(JSON.stringify(results, undefined, 2))
+    console.log(`Searching for current weather information for ${results.address}...\n`)
+    weather.getTemperature(results.latitude, results.longitude, (errorMessage, results) => {
+      if (errorMessage) {
+        console.log(errorMessage)
+      } else {
+        console.log(`The temperature is currently ${results.temperature} degrees celsius but it feels like ${results.apparantTemperature} degrees celsius`)
+      }
+    })
   }
 })
-
-const getTemperature = (lat, long) => {
-  const weatherURL = `https://api.darksky.net/forecast/${process.env.DARK_SKY_API_KEY}/${lat},${long}`
-  request({
-    url: weatherURL,
-    json: true
-  }, (error, response, body) => {
-    if (error) {
-      // Machine Errors ie no internet
-      console.log('Unable to connect to Dark Sky servers.')
-    } else {
-      console.log(`The Temperature is ${body.currently.temperature}`)
-    }
-  })
-
-}
 
